@@ -2,10 +2,10 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
-from .state import AgentState   # Notice the relative import
-from .tools import tools        # Notice the relative import
+from state import AgentState   # Notice the relative import
+from tools import tools        # Notice the relative import
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 llm_with_tools = llm.bind_tools(tools)
 
 def call_model(state: AgentState):
