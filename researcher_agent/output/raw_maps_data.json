@@ -1,0 +1,13 @@
+[
+    {
+        "title": "New York City Neighborhood Boundaries",
+        "url": "https://www.jaredlander.com/category/new-york/",
+        "author": "Jared Lander",
+        "description": "In the map we can clearly see neighborhood boundaries and can click on an area to see the officially designated name.",
+        "themes": [
+            "Boundaries"
+        ],
+        "publication_date": "August 1, 2022",
+        "data_sources": "GitHub Gist"
+    }
+]
