@@ -1,0 +1,23 @@
+{
+  "name": "nyc_atlas",
+  "version": "1.0.0",
+  "description": "NYC Atlas is a catalogue of online interactive data maps of New York City.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tribzi/nyc_atlas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tribzi/nyc_atlas/issues"
+  },
+  "homepage": "https://github.com/tribzi/nyc_atlas#readme",
+  "devDependencies": {
+    "supabase": "^2.87.2"
+  }
+}
