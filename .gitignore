@@ -11,3 +11,17 @@ frontend/dist/
 
 # Mac/Linux System files
 .DS_Store
+
+# Local Database and Storage State
+supabase/.temp/
+supabase/.branches/
+.supabase/
+
+# JavaScript Packages
+node_modules/
+frontend/node_modules/
+
+# Environment Variables (Never upload secrets to GitHub!)
+.env
+.env.local
+frontend/.env.local
