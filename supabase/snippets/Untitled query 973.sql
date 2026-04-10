@@ -1,9 +1,9 @@
--- 1. Create a public bucket called 'map-thumbnails'
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('map-thumbnails', 'map-thumbnails', true);
-
--- 2. Allow anyone to view the images
-CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'map-thumbnails');
-
--- 3. Allow anyone to upload images (we will lock this down with Auth later)
-CREATE POLICY "Allow Uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'map-thumbnails');
+INSERT INTO themes (name) VALUES 
+('Boundaries'), ('Demographics'), ('Dining'), ('Elections'), 
+('Employment'), ('Health'), ('History'), ('Housing'), 
+('Land Use'), ('Nature and Parks'), ('Permits'), ('Planning'), 
+('Politics'), ('Population'), ('Property'), ('Public Assistance'), 
+('Public Information'), ('Race and Ethnicity'), ('Resiliency and Climate'), 
+('Safety'), ('Tourism'), ('Transportation'), ('Utilities'), 
+('Waste'), ('Water')
+ON CONFLICT (name) DO NOTHING;
