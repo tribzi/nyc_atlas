@@ -9,7 +9,8 @@ export default function MapCard({
   themeColors,
   defaultThemeColor,
   setActiveThemeFilter,
-  setActiveFolderFilter
+  setActiveFolderFilter,
+  handleApproveMap // Added new prop
 }) {
   return (
     <div
@@ -29,6 +30,13 @@ export default function MapCard({
             <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
+          </div>
+        )}
+
+        {/* Draft Badge (Only shows if unapproved) */}
+        {!map.approved && (
+          <div className="absolute top-4 left-4 bg-amber-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded shadow-lg z-10">
+            Draft / Under Review
           </div>
         )}
 
@@ -72,7 +80,23 @@ export default function MapCard({
           </div>
         )}
 
-        <p className="text-slate-600 text-sm mb-2 flex-grow truncate-2-lines">{map.description}</p>
+        <p className="text-slate-600 text-sm mb-4 flex-grow truncate-2-lines">{map.description}</p>
+
+        {/* Approval Button (Only shows if map is NOT approved) */}
+        {!map.approved && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Don't open map detail when clicking approve
+              handleApproveMap(map.id);
+            }}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Approve & Publish
+          </button>
+        )}
       </div>
     </div>
   );

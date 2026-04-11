@@ -1,3 +1,4 @@
+import React, { useState } from 'react'; // Add this if it's not already there
 import { supabase } from '../supabaseClient'
 
 export default function Sidebar({
@@ -25,8 +26,21 @@ export default function Sidebar({
   savedMaps,
   handleHeartClick,
   handleRenameFolder,
-  handleDeleteFolder
+  handleDeleteFolder,
+  showReviewQueue,
+  setShowReviewQueue,
+  userStats
 }) {
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?mapId=${activeMap.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   return (
     <aside className="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-slate-200 md:h-screen md:sticky top-0 p-8 flex flex-col shrink-0 z-20 overflow-hidden">
 
@@ -51,15 +65,28 @@ export default function Sidebar({
                 <div className="px-3 py-2 border-b border-slate-100 mb-2">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account</p>
                   <p className="text-xs font-medium text-slate-700 truncate">{session.user.email}</p>
+
+                  {/* NEW: USER STATS SECTION */}
+                  <div className="mt-2 pt-2 border-t border-slate-50 flex flex-col gap-1 text-[10px] text-slate-500 font-medium">
+                    <span className="flex justify-between">
+                      <span>Submitted:</span>
+                      <strong className="text-slate-700">{userStats.submitted} maps</strong>
+                    </span>
+                    <span className="flex justify-between">
+                      <span>Approved:</span>
+                      <strong className="text-emerald-600">{userStats.approved} maps</strong>
+                    </span>
+                  </div>
                 </div>
+
                 <div className="space-y-1">
-                  <button onClick={() => { setActiveFolderFilter(null); setIsProfileMenuOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${!activeFolderFilter ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>🌍 All Maps</button>
-                  <button onClick={() => { setActiveFolderFilter('all-saved'); setIsProfileMenuOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${activeFolderFilter === 'all-saved' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}>❤️ All Saved</button>
+                  <button onClick={() => { setActiveFolderFilter(null); setShowReviewQueue(false); setIsProfileMenuOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${!activeFolderFilter && !showReviewQueue ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>🌍 All Maps</button>
+                  <button onClick={() => { setActiveFolderFilter('all-saved'); setShowReviewQueue(false); setIsProfileMenuOpen(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${activeFolderFilter === 'all-saved' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}>❤️ All Saved</button>
                   <div className="h-px bg-slate-100 my-1"></div>
                   {folders.map(folder => (
                     <div key={folder.id} className="group relative flex items-center">
                       <button
-                        onClick={() => { setActiveFolderFilter(folder.id); setIsProfileMenuOpen(false); }}
+                        onClick={() => { setActiveFolderFilter(folder.id); setShowReviewQueue(false); setIsProfileMenuOpen(false); }}
                         className={`flex-grow text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${activeFolderFilter === folder.id ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
                       >
                         📁 {folder.name}
@@ -85,6 +112,25 @@ export default function Sidebar({
                   ))}
                   <button onClick={() => { setIsCreateFolderOpen(true); setIsProfileMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors">+ Create Folder</button>
                 </div>
+
+                {session.user.email === 'bahijnyc@gmail.com' && (
+                  <div className="mt-2 pt-2 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-1">Admin Tools</p>
+                    <button
+                      onClick={() => {
+                        setShowReviewQueue(!showReviewQueue);
+                        setIsProfileMenuOpen(false);
+                        setActiveFolderFilter(null);
+                        setActiveThemeFilter(null);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                        showReviewQueue ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {showReviewQueue ? '✨ Exit Review Mode' : '🔍 Review Queue'}
+                    </button>
+                  </div>
+                )}
                 <button onClick={() => supabase.auth.signOut()} className="w-full mt-2 text-left px-3 py-2 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors border-t border-slate-100">Sign Out</button>
               </div>
             )}
@@ -112,10 +158,25 @@ export default function Sidebar({
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Back to Directory
               </button>
+
+              {/* OPEN IN NEW TAB BUTTON */}
               <a href={activeMap.url} target="_blank" rel="noreferrer" className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-lg transition-all flex items-center justify-center">
                 Open in New Tab
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
               </a>
+
+              {/* SHARE BUTTON */}
+              <button
+                onClick={handleShare}
+                className="w-full bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 font-bold py-2.5 rounded-lg transition-all flex items-center justify-center"
+              >
+                {isCopied ? 'Copied to Clipboard!' : 'Share Map Link'}
+                {!isCopied && (
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         ) : (
@@ -140,7 +201,7 @@ export default function Sidebar({
                   return (
                     <button
                       key={theme.id}
-                      onClick={() => { setActiveThemeFilter(isActive ? null : theme.id); setActiveFolderFilter(null); }}
+                      onClick={() => { setActiveThemeFilter(isActive ? null : theme.id); setActiveFolderFilter(null); setShowReviewQueue(false); }}
                       className={`px-3 py-1.5 text-xs font-bold rounded border transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : (themeColors[theme.name] || defaultThemeColor)}`}
                     >
                       {theme.name}

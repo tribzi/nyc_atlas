@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 
 // Components
@@ -51,12 +51,15 @@ function App() {
   const [themes, setThemes] = useState([])
   const [folders, setFolders] = useState([])
   const [savedMaps, setSavedMaps] = useState([])
+  const [userStats, setUserStats] = useState({ submitted: 0, approved: 0 })
 
   // UI State
   const [activeThemeFilter, setActiveThemeFilter] = useState(null)
   const [activeFolderFilter, setActiveFolderFilter] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeMap, setActiveMap] = useState(null)
+  const isInitialRender = useRef(true)
+  const [showReviewQueue, setShowReviewQueue] = useState(false)
 
   // Modal Visibility State
   const [isAboutOpen, setIsAboutOpen] = useState(false)
@@ -75,16 +78,17 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
-  const [formData, setFormData] = useState({ title: '', url: '', author: '', description: '' })
+  const [formData, setFormData] = useState({ title: '', url: '', author: '', description: '', selectedThemes: [], imageFile: null })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // --- LIFECYCLE & DATA FETCHING ---
+  // --- INITIAL DATA FETCH EFFECT ---
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) {
         getFolders()
         getSavedMaps()
+        getUserStats(session.user.id)
       }
     })
 
@@ -94,10 +98,13 @@ function App() {
         setIsAuthOpen(false)
         getFolders()
         getSavedMaps()
+        getUserStats(session.user.id)
       } else {
         setFolders([])
         setSavedMaps([])
+        setUserStats({ submitted: 0, approved: 0 })
         setIsProfileMenuOpen(false)
+        setShowReviewQueue(false)
       }
     })
 
@@ -107,14 +114,58 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // --- URL SYNC EFFECT ---
+    useEffect(() => {
+      // SECURITY CATCH: Don't touch the URL until the database has actually loaded the directory
+      if (maps.length === 0) return;
+
+      const url = new URL(window.location);
+      if (activeMap) {
+        url.searchParams.set('mapId', activeMap.id);
+      } else {
+        url.searchParams.delete('mapId');
+      }
+
+      window.history.replaceState({}, '', url);
+    }, [activeMap, maps.length]);
+
+  // --- DATA FUNCTIONS ---
+  async function getUserStats(userId) {
+    if (!userId) return;
+    const { data } = await supabase
+      .from('maps')
+      .select('approved')
+      .eq('submitted_by', userId);
+
+    if (data) {
+      setUserStats({
+        submitted: data.length,
+        approved: data.filter(map => map.approved).length
+      });
+    }
+  }
+
   async function getThemes() {
     const { data } = await supabase.from('themes').select('*').order('name')
     setThemes(data || [])
   }
 
   async function getMaps() {
-    const { data } = await supabase.from('maps').select('*, map_themes(themes(*))').order('title', { ascending: true })
-    setMaps(data || [])
+    const { data } = await supabase
+      .from('maps')
+      .select('*, map_themes(themes(*))')
+      .order('title', { ascending: true });
+
+    const fetchedMaps = data || [];
+    setMaps(fetchedMaps);
+
+    // Deep Linking logic: Automatically open map if URL param exists
+    const urlParams = new URLSearchParams(window.location.search);
+    const mapIdParam = urlParams.get('mapId');
+    if (mapIdParam) {
+      const linkedMap = fetchedMaps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
+      if (linkedMap) setActiveMap(linkedMap);
+    }
   }
 
   async function getFolders() {
@@ -195,6 +246,19 @@ function App() {
     setActiveMap(filteredMaps[randomIndex]);
   }
 
+  async function handleApproveMap(mapId) {
+    const { error } = await supabase
+      .from('maps')
+      .update({ approved: true })
+      .eq('id', mapId);
+
+    if (error) alert(error.message);
+    else {
+      getMaps();
+      if (session) getUserStats(session.user.id);
+    }
+  }
+
   async function handleFormSubmit(e) {
     e.preventDefault();
     setIsSubmitting(true);
@@ -202,7 +266,6 @@ function App() {
     try {
       let finalImageUrl = null;
 
-      // 1. Handle Image Upload if file exists
       if (formData.imageFile) {
         const file = formData.imageFile;
         const fileExt = file.name.split('.').pop();
@@ -219,7 +282,6 @@ function App() {
         finalImageUrl = data.publicUrl;
       }
 
-      // 2. Insert the Map
       const { data: newMap, error: mapError } = await supabase
         .from('maps')
         .insert([{
@@ -227,13 +289,14 @@ function App() {
           author: formData.author,
           url: formData.url,
           description: formData.description,
-          image_url: finalImageUrl
+          image_url: finalImageUrl,
+          approved: false,
+          submitted_by: session?.user?.id || null
         }])
         .select();
 
       if (mapError) throw mapError;
 
-      // 3. Link Themes in map_themes table
       if (formData.selectedThemes?.length > 0 && newMap) {
         const mapId = newMap[0].id;
         const themeRelations = formData.selectedThemes.map(themeId => ({
@@ -244,12 +307,13 @@ function App() {
         if (themeError) throw themeError;
       }
 
-      // 4. Reset & Cleanup
       setFormData({ title: '', url: '', author: '', description: '', selectedThemes: [], imageFile: null });
       setIsFormOpen(false);
-      getMaps(); // Refresh the list
+      getMaps();
+      if (session) getUserStats(session.user.id);
+
     } catch (error) {
-      alert("Error: " + error.message);
+      return error;
     } finally {
       setIsSubmitting(false);
     }
@@ -257,6 +321,9 @@ function App() {
 
   // --- FILTER LOGIC ---
   const filteredMaps = maps.filter(map => {
+    if (showReviewQueue) return !map.approved;
+    if (!map.approved) return false;
+
     let matchesFolder = true;
     if (activeFolderFilter === 'all-saved') matchesFolder = savedMaps.some(sm => sm.map_id === map.id);
     else if (activeFolderFilter) matchesFolder = savedMaps.some(sm => sm.map_id === map.id && sm.folder_id === activeFolderFilter);
@@ -310,14 +377,19 @@ function App() {
           setIsCreateFolderOpen(true);
         }}
         handleDeleteFolder={(id, name) => setFolderToDelete({ id, name })}
+        showReviewQueue={showReviewQueue}
+        setShowReviewQueue={setShowReviewQueue}
+        userStats={userStats}
       />
 
       <main className={`flex-1 ${activeMap ? 'p-0' : 'p-8'}`}>
-        {filteredMaps.length === 0 && (activeThemeFilter || searchQuery) && (
+        {filteredMaps.length === 0 && (activeThemeFilter || searchQuery || showReviewQueue) && (
           <div className="text-center py-12">
-            <p className="text-slate-500 mb-4">No maps match these filters within this collection.</p>
+            <p className="text-slate-500 mb-4">
+              {showReviewQueue ? "Review queue is empty!" : "No maps match these filters within this collection."}
+            </p>
             <button
-              onClick={() => { setActiveThemeFilter(null); setSearchQuery(''); }}
+              onClick={() => { setActiveThemeFilter(null); setSearchQuery(''); setShowReviewQueue(false); }}
               className="text-blue-600 font-bold hover:underline"
             >
               Clear all filters
@@ -335,14 +407,10 @@ function App() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold text-slate-900">
-                {activeFolderFilter === 'all-saved'
-                  ? 'All Saved Maps'
-                  : activeFolderFilter
-                    ? folders.find(f => f.id === activeFolderFilter)?.name
-                    : (activeThemeFilter || searchQuery)
-                      ? 'Filtered Results'
-                      : 'All Maps'
-                }
+                {showReviewQueue ? "Review Queue (Drafts)" :
+                 activeFolderFilter === 'all-saved' ? 'All Saved Maps' :
+                 activeFolderFilter ? folders.find(f => f.id === activeFolderFilter)?.name :
+                 (activeThemeFilter || searchQuery) ? 'Filtered Results' : 'All Maps'}
               </h2>
               <span className="text-sm font-medium text-slate-500 bg-slate-200 px-3 py-1 rounded-full">{filteredMaps.length} Maps</span>
             </div>
@@ -359,6 +427,7 @@ function App() {
                     defaultThemeColor={defaultThemeColor}
                     setActiveThemeFilter={setActiveThemeFilter}
                     setActiveFolderFilter={setActiveFolderFilter}
+                    handleApproveMap={handleApproveMap}
                   />
                 ))}
             </div>
