@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // Add this if it's not already there
+import React, { useState } from 'react';
 import { supabase } from '../supabaseClient'
 
 export default function Sidebar({
@@ -66,7 +66,7 @@ export default function Sidebar({
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account</p>
                   <p className="text-xs font-medium text-slate-700 truncate">{session.user.email}</p>
 
-                  {/* NEW: USER STATS SECTION */}
+                  {/* USER STATS SECTION */}
                   <div className="mt-2 pt-2 border-t border-slate-50 flex flex-col gap-1 text-[10px] text-slate-500 font-medium">
                     <span className="flex justify-between">
                       <span>Submitted:</span>
@@ -151,6 +151,24 @@ export default function Sidebar({
               </button>
               <h3 className="font-bold text-blue-900 leading-tight pr-4">{activeMap.title}</h3>
               <p className="text-xs text-blue-700 mt-1 uppercase tracking-wider font-semibold">{activeMap.author}</p>
+
+              {/* THEME TAGS REDUX */}
+              {activeMap.map_themes && activeMap.map_themes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {activeMap.map_themes.map(mt => {
+                    const colorClasses = themeColors[mt.themes.name] || defaultThemeColor;
+                    return (
+                      <span
+                        key={mt.themes.id}
+                        className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${colorClasses}`}
+                      >
+                        {mt.themes.name}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
               {activeMap.description && <p className="mt-4 text-sm text-slate-700 leading-relaxed border-t border-blue-200/50 pt-3">{activeMap.description}</p>}
             </div>
             <div className="space-y-2">
