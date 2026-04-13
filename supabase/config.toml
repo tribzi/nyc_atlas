@@ -1,0 +1,8 @@
+# ... other config ...
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/**"]
+
+# ... rest of the auth settings like durations, etc. ...
