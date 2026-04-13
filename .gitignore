@@ -24,4 +24,5 @@ frontend/node_modules/
 # Environment Variables (Never upload secrets to GitHub!)
 .env
 .env.local
+.env.*
 frontend/.env.local
