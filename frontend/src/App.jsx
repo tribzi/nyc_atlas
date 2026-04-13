@@ -13,6 +13,7 @@ import SaveMapModal from './components/Modals/SaveMapModal'
 import CreateFolderModal from './components/Modals/CreateFolderModal'
 import ConfirmationModal from './components/Modals/ConfirmationModal'
 import SubmitMapModal from './components/Modals/SubmitMapModal'
+import WelcomePopup from './components/Modals/WelcomePopup'
 
 // --- THE RAINBOW PALETTE MAPPING ---
 const themeColors = {
@@ -58,6 +59,9 @@ function App() {
   const [activeFolderFilter, setActiveFolderFilter] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeMap, setActiveMap] = useState(null)
+  const scrollPositionRef = useRef(0)
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false)
+  const hasCheckedDeepLink = useRef(false)
   const isInitialRender = useRef(true)
   const [showReviewQueue, setShowReviewQueue] = useState(false)
 
@@ -151,22 +155,30 @@ function App() {
   }
 
   async function getMaps() {
-    const { data } = await supabase
-      .from('maps')
-      .select('*, map_themes(themes(*))')
-      .order('title', { ascending: true });
+      const { data } = await supabase
+        .from('maps')
+        .select('*, map_themes(themes(*))')
+        .order('title', { ascending: true });
 
-    const fetchedMaps = data || [];
-    setMaps(fetchedMaps);
+      const fetchedMaps = data || [];
+      setMaps(fetchedMaps);
 
-    // Deep Linking logic: Automatically open map if URL param exists
-    const urlParams = new URLSearchParams(window.location.search);
-    const mapIdParam = urlParams.get('mapId');
-    if (mapIdParam) {
-      const linkedMap = fetchedMaps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
-      if (linkedMap) setActiveMap(linkedMap);
+      // Deep Linking logic: Only check on the first load!
+      if (!hasCheckedDeepLink.current) {
+        hasCheckedDeepLink.current = true; // Lock it so it doesn't fire again
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mapIdParam = urlParams.get('mapId');
+
+        if (mapIdParam) {
+          const linkedMap = fetchedMaps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
+          if (linkedMap) {
+            setActiveMap(linkedMap);
+            setShowWelcomePopup(true); // Trigger the welcome toast!
+          }
+        }
+      }
     }
-  }
 
   async function getFolders() {
     const { data } = await supabase.from('folders').select('*').order('name')
@@ -179,6 +191,21 @@ function App() {
   }
 
   // --- ACTIONS ---
+  const handleMapNavigation = (map) => {
+      if (map) {
+        // Opening a map: Save current scroll depth, set map, jump to top of detail view
+        scrollPositionRef.current = window.scrollY;
+        setActiveMap(map);
+        window.scrollTo(0, 0);
+      } else {
+        // Closing a map: Clear the map, then restore scroll depth once the directory repaints
+        setActiveMap(null);
+        setTimeout(() => {
+          window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
+        }, 10);
+      }
+    };
+
   async function handleLogin(e) {
     e.preventDefault()
     setAuthLoading(true)
@@ -241,10 +268,10 @@ function App() {
   }
 
   function handleFeelingLucky() {
-    if (filteredMaps.length === 0) return;
-    const randomIndex = Math.floor(Math.random() * filteredMaps.length);
-    setActiveMap(filteredMaps[randomIndex]);
-  }
+      if (filteredMaps.length === 0) return;
+      const randomIndex = Math.floor(Math.random() * filteredMaps.length);
+      handleMapNavigation(filteredMaps[randomIndex]); // <-- UPDATE THIS LINE
+    }
 
   async function handleApproveMap(mapId) {
     const { error } = await supabase
@@ -354,6 +381,7 @@ function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         activeMap={activeMap}
+        setActiveMap={handleMapNavigation}
         setActiveMap={setActiveMap}
         setIsProfileMenuOpen={setIsProfileMenuOpen}
         isProfileMenuOpen={isProfileMenuOpen}
@@ -399,7 +427,7 @@ function App() {
         {activeMap ? (
             <MapDetail
               map={activeMap}
-              setActiveMap={setActiveMap}
+              setActiveMap={handleMapNavigation}
               isSaved={savedMaps.some(sm => sm.map_id === activeMap.id)}
               handleHeartClick={handleHeartClick}
             />
@@ -422,7 +450,7 @@ function App() {
                     session={session}
                     isSaved={savedMaps.some(sm => sm.map_id === map.id)}
                     handleHeartClick={handleHeartClick}
-                    setActiveMap={setActiveMap}
+                    setActiveMap={handleMapNavigation}
                     themeColors={themeColors}
                     defaultThemeColor={defaultThemeColor}
                     setActiveThemeFilter={setActiveThemeFilter}
@@ -485,8 +513,14 @@ function App() {
         handleFormSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
       />
-    </div>
-  )
-}
 
-export default App
+      <WelcomePopup
+        isOpen={showWelcomePopup}
+        onClose={() => setShowWelcomePopup(false)}
+      />
+
+        </div>
+      )
+    }
+
+    export default App
