@@ -61,13 +61,16 @@ export default function SubmitMapModal({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Thank You!</h2>
-            <p className="text-slate-500 max-w-sm mb-8 font-medium">
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Thank You!</h2>
+            <p className="text-slate-600 max-w-sm mb-8 text-base leading-relaxed">
               Your map has been submitted for review. It will appear in the directory once approved.
             </p>
             <div className="flex gap-3">
               <button onClick={onClose} className="py-3 px-8 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all">Close</button>
-              <button onClick={() => setIsSuccess(false)} className="py-3 px-8 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all">Submit Another</button>
+              <button onClick={() => {
+                setIsSuccess(false);
+                setFormData({ title: '', url: '', author: '', description: '', selectedThemes: [], imageFile: null });
+              }} className="py-3 px-8 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all">Submit Another</button>
             </div>
           </div>
         ) : (

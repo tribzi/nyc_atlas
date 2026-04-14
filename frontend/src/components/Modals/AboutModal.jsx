@@ -17,7 +17,7 @@ export default function AboutModal({ isOpen, onClose }) {
           <p>There is a wealth of great spatial data represented in online maps of New York City created by city agencies, individual developers, community advocates, news outlets, and others. This site catalogues these resources, making them easier to find and reference.</p>
           <p>If you would like to contribute a map that you made or found, please use the Submit a Map form at the lower left corner.</p>
           <p>NYC Atlas is created and maintained by <a href="https://bahijchancey.com" target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline">Bahij Chancey</a>, an NYC-based urban planner. Bahij has not created any of the maps on this website, only the NYC Atlas catalogue. The author for each map is credited.</p>
-          <p className="text-sm pt-4 border-t border-slate-100 italic">This site is built using React and Supabase with lots of help from Google Gemini.</p>
+          <p className="text-sm pt-4 border-t border-slate-100 italic">This site is built using React, Vite, Tailwind, and Supabase with lots of help from Google Gemini. You can view the code on the <a href="https://github.com/tribzi/nyc_atlas" target="_blank" title="NYC Atlas Github repo" className="text-blue-600 font-bold hover:underline">NYC Atlas Github repo</a>.</p>
         </div>
       </div>
     </div>
