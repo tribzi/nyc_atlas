@@ -234,14 +234,22 @@ function App() {
     };
 
   async function handleLogin(e) {
-    e.preventDefault()
-    setAuthLoading(true)
-    setMessage('')
-    const { error } = await supabase.auth.signInWithOtp({ email })
-    if (error) alert(error.message)
-    else setMessage('Check Inbucket (port 54324) for your login link!')
-    setAuthLoading(false)
-  }
+      e.preventDefault()
+      setAuthLoading(true)
+      setMessage('')
+
+      // THE FIX: Explicitly pass the exact origin URL without any trailing slashes or asterisks
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      })
+
+      if (error) alert(error.message)
+      else setMessage('Check Inbucket (port 54324) for your login link!')
+      setAuthLoading(false)
+    }
 
   async function handleFolderSubmit(e) {
     if (e) e.preventDefault()
