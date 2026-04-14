@@ -20,8 +20,7 @@ export default function Sidebar({
   isFormOpen,
   setIsAuthOpen,
   setIsCreateFolderOpen,
-  themeColors,
-  defaultThemeColor,
+  getDynamicThemeColor,
   handleFeelingLucky,
   savedMaps,
   handleHeartClick,
@@ -156,7 +155,7 @@ export default function Sidebar({
               {activeMap.map_themes && activeMap.map_themes.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {activeMap.map_themes.map(mt => {
-                    const colorClasses = themeColors[mt.themes.name] || defaultThemeColor;
+                    const colorClasses = getDynamicThemeColor(mt.themes.name, themes);
                     return (
                       <span
                         key={mt.themes.id}
@@ -216,11 +215,12 @@ export default function Sidebar({
               <div className="flex flex-wrap gap-2">
                 {themes.map(theme => {
                   const isActive = activeThemeFilter === theme.id;
+                  const colorClasses = getDynamicThemeColor(theme.name, themes);
                   return (
                     <button
                       key={theme.id}
                       onClick={() => { setActiveThemeFilter(isActive ? null : theme.id); setActiveFolderFilter(null); setShowReviewQueue(false); }}
-                      className={`px-3 py-1.5 text-xs font-bold rounded border transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : (themeColors[theme.name] || defaultThemeColor)}`}
+                      className={`px-3 py-1.5 text-xs font-bold rounded border transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : colorClasses}`}
                     >
                       {theme.name}
                     </button>
