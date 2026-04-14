@@ -6,11 +6,11 @@ export default function MapCard({
   isSaved,
   handleHeartClick,
   setActiveMap,
-  themeColors,
-  defaultThemeColor,
+  getDynamicThemeColor,
+  allThemes,
   setActiveThemeFilter,
   setActiveFolderFilter,
-  handleApproveMap // Added new prop
+  handleApproveMap
 }) {
   return (
     <div
@@ -62,7 +62,7 @@ export default function MapCard({
         {map.map_themes && map.map_themes.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {map.map_themes.map(mt => {
-              const colorClasses = themeColors[mt.themes.name] || defaultThemeColor;
+              const colorClasses = getDynamicThemeColor(mt.themes.name, allThemes);
               return (
                 <button
                   key={mt.themes.id}

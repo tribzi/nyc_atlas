@@ -15,35 +15,62 @@ import ConfirmationModal from './components/Modals/ConfirmationModal'
 import SubmitMapModal from './components/Modals/SubmitMapModal'
 import WelcomePopup from './components/Modals/WelcomePopup'
 
-// --- THE RAINBOW PALETTE MAPPING ---
-const themeColors = {
-  'Boundaries': 'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200',
-  'Demographics': 'bg-pink-100 text-pink-700 border-pink-200 hover:bg-pink-200',
-  'Dining': 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200',
-  'Elections': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-  'Employment': 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200',
-  'Health': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200',
-  'History': 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200',
-  'Housing': 'bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200',
-  'Land Use': 'bg-lime-100 text-lime-800 border-lime-200 hover:bg-lime-200',
-  'Nature and Parks': 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200',
-  'Permits': 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200',
-  'Planning': 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 hover:bg-fuchsia-200',
-  'Politics': 'bg-sky-100 text-sky-700 border-sky-200 hover:bg-sky-200',
-  'Population': 'bg-violet-100 text-violet-700 border-violet-200 hover:bg-violet-200',
-  'Property': 'bg-teal-100 text-teal-700 border-teal-200 hover:bg-teal-200',
-  'Public Assistance': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-  'Public Information': 'bg-cyan-100 text-cyan-700 border-cyan-200 hover:bg-cyan-200',
-  'Race and Ethnicity': 'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200',
-  'Resiliency and Climate': 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200',
-  'Safety': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200',
-  'Tourism': 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200',
-  'Transportation': 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200',
-  'Utilities': 'bg-sky-100 text-sky-700 border-sky-200 hover:bg-sky-200',
-  'Waste': 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200',
-  'Water': 'bg-cyan-100 text-cyan-700 border-cyan-200 hover:bg-cyan-200'
-}
-const defaultThemeColor = 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+// --- DYNAMIC RAINBOW PALETTE ---
+const rainbowPalette = [
+  // Tier 1: Soft Pastels
+  'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200',
+  'bg-red-100 text-red-700 border-red-200 hover:bg-red-200',
+  'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200',
+  'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200',
+  'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200',
+  'bg-lime-100 text-lime-800 border-lime-200 hover:bg-lime-200',
+  'bg-green-100 text-green-700 border-green-200 hover:bg-green-200',
+  'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200',
+  'bg-teal-100 text-teal-700 border-teal-200 hover:bg-teal-200',
+  'bg-cyan-100 text-cyan-700 border-cyan-200 hover:bg-cyan-200',
+  'bg-sky-100 text-sky-700 border-sky-200 hover:bg-sky-200',
+  'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
+  'bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200',
+  'bg-violet-100 text-violet-700 border-violet-200 hover:bg-violet-200',
+  'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
+  'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 hover:bg-fuchsia-200',
+  'bg-pink-100 text-pink-700 border-pink-200 hover:bg-pink-200',
+
+  // Tier 2: Vivid Tones
+  'bg-rose-200 text-rose-800 border-rose-300 hover:bg-rose-300',
+  'bg-red-200 text-red-800 border-red-300 hover:bg-red-300',
+  'bg-orange-200 text-orange-800 border-orange-300 hover:bg-orange-300',
+  'bg-amber-200 text-amber-900 border-amber-300 hover:bg-amber-300',
+  'bg-yellow-200 text-yellow-900 border-yellow-300 hover:bg-yellow-300',
+  'bg-lime-200 text-lime-900 border-lime-300 hover:bg-lime-300',
+  'bg-green-200 text-green-800 border-green-300 hover:bg-green-300',
+  'bg-emerald-200 text-emerald-800 border-emerald-300 hover:bg-emerald-300',
+  'bg-teal-200 text-teal-800 border-teal-300 hover:bg-teal-300',
+  'bg-cyan-200 text-cyan-800 border-cyan-300 hover:bg-cyan-300',
+  'bg-sky-200 text-sky-800 border-sky-300 hover:bg-sky-300',
+  'bg-blue-200 text-blue-800 border-blue-300 hover:bg-blue-300',
+  'bg-indigo-200 text-indigo-800 border-indigo-300 hover:bg-indigo-300',
+  'bg-violet-200 text-violet-800 border-violet-300 hover:bg-violet-300',
+  'bg-purple-200 text-purple-800 border-purple-300 hover:bg-purple-300',
+  'bg-fuchsia-200 text-fuchsia-800 border-fuchsia-300 hover:bg-fuchsia-300',
+  'bg-pink-200 text-pink-800 border-pink-300 hover:bg-pink-300'
+];
+
+const defaultThemeColor = 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
+
+const getDynamicThemeColor = (themeName, allThemes) => {
+  if (!allThemes || allThemes.length === 0) return defaultThemeColor;
+
+  const sortedThemeNames = [...allThemes]
+    .map(t => t.name)
+    .sort((a, b) => a.localeCompare(b));
+
+  const themeIndex = sortedThemeNames.indexOf(themeName);
+  if (themeIndex === -1) return defaultThemeColor;
+
+  const colorIndex = themeIndex % rainbowPalette.length;
+  return rainbowPalette[colorIndex];
+};
 
 function App() {
   // Authentication & Core Data State
@@ -381,7 +408,6 @@ function App() {
         setSearchQuery={setSearchQuery}
         activeMap={activeMap}
         setActiveMap={handleMapNavigation}
-        setActiveMap={setActiveMap}
         setIsProfileMenuOpen={setIsProfileMenuOpen}
         isProfileMenuOpen={isProfileMenuOpen}
         setIsAboutOpen={setIsAboutOpen}
@@ -389,8 +415,7 @@ function App() {
         isFormOpen={isFormOpen}
         setIsAuthOpen={setIsAuthOpen}
         setIsCreateFolderOpen={setIsCreateFolderOpen}
-        themeColors={themeColors}
-        defaultThemeColor={defaultThemeColor}
+        getDynamicThemeColor={getDynamicThemeColor}
         handleFeelingLucky={handleFeelingLucky}
         formData={formData}
         setFormData={setFormData}
@@ -450,8 +475,8 @@ function App() {
                     isSaved={savedMaps.some(sm => sm.map_id === map.id)}
                     handleHeartClick={handleHeartClick}
                     setActiveMap={handleMapNavigation}
-                    themeColors={themeColors}
-                    defaultThemeColor={defaultThemeColor}
+                    getDynamicThemeColor={getDynamicThemeColor}
+                    allThemes={themes}
                     setActiveThemeFilter={setActiveThemeFilter}
                     setActiveFolderFilter={setActiveFolderFilter}
                     handleApproveMap={handleApproveMap}
