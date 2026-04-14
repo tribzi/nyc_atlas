@@ -335,7 +335,6 @@ function App() {
       }
 
       setFormData({ title: '', url: '', author: '', description: '', selectedThemes: [], imageFile: null });
-      setIsFormOpen(false);
       getMaps();
       if (session) getUserStats(session.user.id);
 
