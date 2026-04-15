@@ -1,3 +1,10 @@
+# Setup notes
+
+Run development env: npm run dev
+
+Email forwarding is setup using ImprovMX
+Magic link sending is setup using Resend
+
 # Fields for the map DB:
 * Name
 * Description

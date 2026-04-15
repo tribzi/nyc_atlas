@@ -19,5 +19,8 @@
   "homepage": "https://github.com/tribzi/nyc_atlas#readme",
   "devDependencies": {
     "supabase": "^2.87.2"
+  },
+  "dependencies": {
+    "browser-image-compression": "^2.0.2"
   }
 }
