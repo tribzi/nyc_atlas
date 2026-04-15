@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import imageCompression from 'browser-image-compression';
+import { Analytics } from '@vercel/analytics/react';
 
 // Components
 import Sidebar from './components/Sidebar'
@@ -568,6 +569,8 @@ function App() {
         isOpen={showWelcomePopup}
         onClose={() => setShowWelcomePopup(false)}
       />
+
+      <Analytics />
 
         </div>
       )
