@@ -23,7 +23,9 @@ export default function MapCard({
           <img
             src={map.image_url}
             alt={map.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"          // <-- THE MAGIC ATTRIBUTE
+            decoding="async"        // <-- Tells the browser not to block the main thread while decoding
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 bg-slate-200"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">

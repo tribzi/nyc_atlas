@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabaseClient'
+import imageCompression from 'browser-image-compression';
 
 // Components
 import Sidebar from './components/Sidebar'
@@ -322,63 +323,80 @@ function App() {
   }
 
   async function handleFormSubmit(e) {
-    e.preventDefault();
-    setIsSubmitting(true);
+      e.preventDefault();
+      setIsSubmitting(true);
 
-    try {
-      let finalImageUrl = null;
+      try {
+        let finalImageUrl = null;
 
-      if (formData.imageFile) {
-        const file = formData.imageFile;
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `thumbnails/${fileName}`;
+        if (formData.imageFile) {
+          let fileToUpload = formData.imageFile;
 
-        const { error: uploadError } = await supabase.storage
-          .from('map-thumbnails')
-          .upload(filePath, file);
+          // --- NEW COMPRESSION LOGIC ---
+          const options = {
+            maxSizeMB: 0.5,          // Compresses to roughly 500KB or less
+            maxWidthOrHeight: 1200,  // Resizes massive images to a max of 1200px
+            useWebWorker: true       // Keeps the UI from freezing during compression
+          };
 
-        if (uploadError) throw uploadError;
+          try {
+            fileToUpload = await imageCompression(formData.imageFile, options);
+          } catch (error) {
+            console.error("Compression error, uploading original:", error);
+            // If compression fails for any reason, it safely falls back to the original file
+          }
+          // -----------------------------
 
-        const { data } = supabase.storage.from('map-thumbnails').getPublicUrl(filePath);
-        finalImageUrl = data.publicUrl;
+          // We now use fileToUpload.name instead of file.name
+          const fileExt = fileToUpload.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `thumbnails/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('map-thumbnails')
+            .upload(filePath, fileToUpload); // Upload the compressed version
+
+          if (uploadError) throw uploadError;
+
+          const { data } = supabase.storage.from('map-thumbnails').getPublicUrl(filePath);
+          finalImageUrl = data.publicUrl;
+        }
+
+        const { data: newMap, error: mapError } = await supabase
+          .from('maps')
+          .insert([{
+            title: formData.title,
+            author: formData.author,
+            url: formData.url,
+            description: formData.description,
+            image_url: finalImageUrl,
+            approved: false,
+            submitted_by: session?.user?.id || null
+          }])
+          .select();
+
+        if (mapError) throw mapError;
+
+        if (formData.selectedThemes?.length > 0 && newMap) {
+          const mapId = newMap[0].id;
+          const themeRelations = formData.selectedThemes.map(themeId => ({
+            map_id: mapId,
+            theme_id: themeId
+          }));
+          const { error: themeError } = await supabase.from('map_themes').insert(themeRelations);
+          if (themeError) throw themeError;
+        }
+
+        setFormData({ title: '', url: '', author: '', description: '', selectedThemes: [], imageFile: null });
+        getMaps();
+        if (session) getUserStats(session.user.id);
+
+      } catch (error) {
+        return error;
+      } finally {
+        setIsSubmitting(false);
       }
-
-      const { data: newMap, error: mapError } = await supabase
-        .from('maps')
-        .insert([{
-          title: formData.title,
-          author: formData.author,
-          url: formData.url,
-          description: formData.description,
-          image_url: finalImageUrl,
-          approved: false,
-          submitted_by: session?.user?.id || null
-        }])
-        .select();
-
-      if (mapError) throw mapError;
-
-      if (formData.selectedThemes?.length > 0 && newMap) {
-        const mapId = newMap[0].id;
-        const themeRelations = formData.selectedThemes.map(themeId => ({
-          map_id: mapId,
-          theme_id: themeId
-        }));
-        const { error: themeError } = await supabase.from('map_themes').insert(themeRelations);
-        if (themeError) throw themeError;
-      }
-
-      setFormData({ title: '', url: '', author: '', description: '', selectedThemes: [], imageFile: null });
-      getMaps();
-      if (session) getUserStats(session.user.id);
-
-    } catch (error) {
-      return error;
-    } finally {
-      setIsSubmitting(false);
     }
-  }
 
   // --- FILTER LOGIC ---
   const filteredMaps = maps.filter(map => {
