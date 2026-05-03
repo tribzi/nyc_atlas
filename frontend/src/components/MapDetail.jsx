@@ -9,7 +9,8 @@ const BLOCKED_DOMAINS = [
   'map.mta.info',
   'treekeepersoftware.com',
   'plownyc.cityofnewyork.us',
-  'nytimes.com'
+  'nytimes.com',
+  'felt.com'
 ];
 
 export default function MapDetail({
