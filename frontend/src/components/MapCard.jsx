@@ -82,7 +82,11 @@ export default function MapCard({
           </div>
         )}
 
-        <p className="text-slate-600 text-sm mb-4 flex-grow truncate-2-lines">{map.description}</p>
+        {map.description && (
+          <p className="text-sm text-slate-600 mt-2 line-clamp-3">
+            {map.description}
+          </p>
+        )}
 
         {/* Approval Button (Only shows if map is NOT approved) */}
         {!map.approved && (
