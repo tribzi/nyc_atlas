@@ -26,3 +26,9 @@ frontend/node_modules/
 .env.local
 .env.*
 frontend/.env.local
+
+# Internal Doc
+notes.md
+
+#Research Agent
+researcher_agent/
