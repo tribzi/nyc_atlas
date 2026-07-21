@@ -146,20 +146,27 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // --- URL SYNC EFFECT ---
+  // --- BACK BUTTON (POPSTATE) EFFECT ---
     useEffect(() => {
-      // SECURITY CATCH: Don't touch the URL until the database has actually loaded the directory
-      if (maps.length === 0) return;
+      const handleBackButton = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mapIdParam = urlParams.get('mapId');
 
-      const url = new URL(window.location);
-      if (activeMap) {
-        url.searchParams.set('mapId', activeMap.id);
-      } else {
-        url.searchParams.delete('mapId');
-      }
+        if (!mapIdParam) {
+          // User clicked back to the main directory
+          setActiveMap(null);
+        } else if (maps.length > 0) {
+          // User clicked back/forward to a specific map
+          const linkedMap = maps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
+          if (linkedMap) setActiveMap(linkedMap);
+        }
+      };
 
-      window.history.replaceState({}, '', url);
-    }, [activeMap, maps.length]);
+      window.addEventListener('popstate', handleBackButton);
+
+      // Cleanup the listener when the component unmounts
+      return () => window.removeEventListener('popstate', handleBackButton);
+    }, [maps]);
 
   // --- DATA FUNCTIONS ---
   async function getUserStats(userId) {
@@ -224,10 +231,16 @@ function App() {
         // Opening a map: Save current scroll depth, set map, jump to top of detail view
         scrollPositionRef.current = window.scrollY;
         setActiveMap(map);
+
+        // Push a new entry to the browser history
+        window.history.pushState({ mapId: map.id }, '', `?mapId=${map.id}`);
         window.scrollTo(0, 0);
       } else {
         // Closing a map: Clear the map, then restore scroll depth once the directory repaints
         setActiveMap(null);
+
+        // Push a clean URL to history to represent the directory index
+        window.history.pushState({}, '', window.location.pathname);
         setTimeout(() => {
           window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
         }, 10);
