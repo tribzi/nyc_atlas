@@ -88,6 +88,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeMap, setActiveMap] = useState(null)
   const scrollPositionRef = useRef(0)
+  const isPopStateEvent = useRef(false)
+  const previousState = useRef({ theme: null, folder: null, map: null, search: '' })
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const hasCheckedDeepLink = useRef(false)
   const isInitialRender = useRef(true)
@@ -146,27 +148,77 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // --- BACK BUTTON (POPSTATE) EFFECT ---
-    useEffect(() => {
-      const handleBackButton = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mapIdParam = urlParams.get('mapId');
+  // --- UNIFIED BROWSER HISTORY EFFECT ---
+  useEffect(() => {
+    const handleBackButton = () => {
+      // 1. Tell React this state change came from the browser back button
+      isPopStateEvent.current = true;
 
-        if (!mapIdParam) {
-          // User clicked back to the main directory
-          setActiveMap(null);
-        } else if (maps.length > 0) {
-          // User clicked back/forward to a specific map
-          const linkedMap = maps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
-          if (linkedMap) setActiveMap(linkedMap);
-        }
-      };
+      const urlParams = new URLSearchParams(window.location.search);
 
-      window.addEventListener('popstate', handleBackButton);
+      // 2. Restore Map State
+      const mapIdParam = urlParams.get('mapId');
+      if (!mapIdParam) setActiveMap(null);
+      else if (maps.length > 0) {
+        const linkedMap = maps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
+        if (linkedMap) setActiveMap(linkedMap);
+      }
 
-      // Cleanup the listener when the component unmounts
-      return () => window.removeEventListener('popstate', handleBackButton);
-    }, [maps]);
+      // 3. Restore Filter States
+      setActiveThemeFilter(urlParams.get('theme') || null);
+      setActiveFolderFilter(urlParams.get('folder') || null);
+      setSearchQuery(urlParams.get('q') || '');
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+    return () => window.removeEventListener('popstate', handleBackButton);
+  }, [maps]);
+
+  // --- SYNC STATE TO URL EFFECT ---
+  useEffect(() => {
+    if (maps.length === 0) return; // Wait for directory to load
+
+    // If the back button triggered this render, skip updating the URL!
+    if (isPopStateEvent.current) {
+      isPopStateEvent.current = false;
+      previousState.current = { theme: activeThemeFilter, folder: activeFolderFilter, map: activeMap?.id, search: searchQuery };
+      return;
+    }
+
+    const url = new URL(window.location);
+
+    // Update URL Parameters
+    if (activeThemeFilter) url.searchParams.set('theme', activeThemeFilter);
+    else url.searchParams.delete('theme');
+
+    if (activeFolderFilter) url.searchParams.set('folder', activeFolderFilter);
+    else url.searchParams.delete('folder');
+
+    if (searchQuery) url.searchParams.set('q', searchQuery);
+    else url.searchParams.delete('q');
+
+    if (activeMap) url.searchParams.set('mapId', activeMap.id);
+    else url.searchParams.delete('mapId');
+
+    const currentUrl = window.location.pathname + window.location.search;
+    const newUrl = url.pathname + url.search;
+
+    if (currentUrl !== newUrl) {
+      const themeChanged = activeThemeFilter !== previousState.current.theme;
+      const folderChanged = activeFolderFilter !== previousState.current.folder;
+      const mapChanged = activeMap?.id !== previousState.current.map;
+
+      // If ONLY the search query changed (typing), use replaceState so we don't spam the history with single letters
+      if (!themeChanged && !folderChanged && !mapChanged && searchQuery !== previousState.current.search) {
+        window.history.replaceState({}, '', newUrl);
+      } else {
+        window.history.pushState({}, '', newUrl);
+      }
+    }
+
+    // Update refs for the next render cycle
+    previousState.current = { theme: activeThemeFilter, folder: activeFolderFilter, map: activeMap?.id, search: searchQuery };
+  }, [activeMap, activeThemeFilter, activeFolderFilter, searchQuery, maps.length]);
 
   // --- DATA FUNCTIONS ---
   async function getUserStats(userId) {
@@ -203,8 +255,18 @@ function App() {
         hasCheckedDeepLink.current = true; // Lock it so it doesn't fire again
 
         const urlParams = new URLSearchParams(window.location.search);
-        const mapIdParam = urlParams.get('mapId');
 
+        // 1. Set Initial Filters
+        const themeParam = urlParams.get('theme');
+        const folderParam = urlParams.get('folder');
+        const qParam = urlParams.get('q');
+
+        if (themeParam) setActiveThemeFilter(themeParam);
+        if (folderParam) setActiveFolderFilter(folderParam);
+        if (qParam) setSearchQuery(qParam);
+
+        // 2. Open Map if linked
+        const mapIdParam = urlParams.get('mapId');
         if (mapIdParam) {
           const linkedMap = fetchedMaps.find(m => m.id === mapIdParam || m.id.toString() === mapIdParam);
           if (linkedMap) {
@@ -228,19 +290,11 @@ function App() {
   // --- ACTIONS ---
   const handleMapNavigation = (map) => {
       if (map) {
-        // Opening a map: Save current scroll depth, set map, jump to top of detail view
         scrollPositionRef.current = window.scrollY;
         setActiveMap(map);
-
-        // Push a new entry to the browser history
-        window.history.pushState({ mapId: map.id }, '', `?mapId=${map.id}`);
         window.scrollTo(0, 0);
       } else {
-        // Closing a map: Clear the map, then restore scroll depth once the directory repaints
         setActiveMap(null);
-
-        // Push a clean URL to history to represent the directory index
-        window.history.pushState({}, '', window.location.pathname);
         setTimeout(() => {
           window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
         }, 10);
@@ -432,6 +486,24 @@ function App() {
     return matchesTheme && matchesSearch && matchesFolder;
   })
 
+  // --- DYNAMIC TITLE LOGIC ---
+    let directoryTitle = "All Maps";
+    if (showReviewQueue) {
+      directoryTitle = "Review Queue (Drafts)";
+    } else if (activeFolderFilter === 'all-saved') {
+      directoryTitle = "All Saved Maps";
+    } else if (activeFolderFilter) {
+      directoryTitle = folders.find(f => f.id === activeFolderFilter)?.name || "Folder";
+    } else if (searchQuery && activeThemeFilter) {
+      const themeName = themes.find(t => t.id === activeThemeFilter)?.name;
+      directoryTitle = `Search: "${searchQuery}" in ${themeName}`;
+    } else if (searchQuery) {
+      directoryTitle = `Search Results for "${searchQuery}"`;
+    } else if (activeThemeFilter) {
+      const themeName = themes.find(t => t.id === activeThemeFilter)?.name;
+      directoryTitle = `Filtered for Theme: ${themeName}`;
+    }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col md:flex-row">
 
@@ -498,10 +570,7 @@ function App() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold text-slate-900">
-                {showReviewQueue ? "Review Queue (Drafts)" :
-                 activeFolderFilter === 'all-saved' ? 'All Saved Maps' :
-                 activeFolderFilter ? folders.find(f => f.id === activeFolderFilter)?.name :
-                 (activeThemeFilter || searchQuery) ? 'Filtered Results' : 'All Maps'}
+                {directoryTitle}
               </h2>
               <span className="text-sm font-medium text-slate-500 bg-slate-200 px-3 py-1 rounded-full">{filteredMaps.length} Maps</span>
             </div>
