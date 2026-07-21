@@ -10,8 +10,7 @@ const BLOCKED_DOMAINS = [
   'treekeepersoftware.com',
   'plownyc.cityofnewyork.us',
   'nytimes.com',
-  'felt.com',
-  'arcgis.com'
+  'felt.com'
 ];
 
 export default function MapDetail({
