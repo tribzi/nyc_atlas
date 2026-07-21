@@ -8,4 +8,15 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  server: {
+      proxy: {
+        // Tells Vite to intercept any request starting with /cdn/thumbnails
+        '/cdn/thumbnails': {
+          target: 'https://vakjdimqmnumcocjjjmg.supabase.co',
+          changeOrigin: true,
+          // Rewrites the local URL to the actual Supabase bucket URL before fetching
+          rewrite: (path) => path.replace(/^\/cdn\/thumbnails/, '/storage/v1/object/public/map-thumbnails')
+        }
+      }
+    }
 })

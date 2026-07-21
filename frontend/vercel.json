@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    {
+      "source": "/cdn/thumbnails/:path*",
+      "destination": "https://vakjdimqmnumcocjjjmg.supabase.co/storage/v1/object/public/map-thumbnails/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/cdn/thumbnails/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=31536000, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}

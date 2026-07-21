@@ -21,10 +21,13 @@ export default function MapCard({
       <div className="w-full h-72 bg-slate-100 border-b border-slate-200 relative overflow-hidden shrink-0">
         {map.image_url ? (
           <img
-            src={map.image_url}
+            src={map.image_url.replace(
+              'https://vakjdimqmnumcocjjjmg.supabase.co/storage/v1/object/public/map-thumbnails/',
+              '/cdn/thumbnails/'
+            )}
             alt={map.title}
-            loading="lazy"          // <-- THE MAGIC ATTRIBUTE
-            decoding="async"        // <-- Tells the browser not to block the main thread while decoding
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 bg-slate-200"
           />
         ) : (
